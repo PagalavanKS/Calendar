@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import './cal.css';
 
 const CalenderWeb = () => {
   const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -19,21 +20,13 @@ const CalenderWeb = () => {
   const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
 
   const handlePrev = () => {
-    if (currentMonth === 0) {
-      setCurrentMonth(11);
-      setCurrentYear(currentYear - 1);
-    } else {
-      setCurrentMonth(currentMonth - 1);
-    }
+    setCurrentMonth((prev) => (prev === 0 ? 11 : prev - 1));
+    setCurrentYear((prev) => (currentMonth === 0 ? prev - 1 : prev));
   };
 
   const handleNext = () => {
-    if (currentMonth === 11) {
-      setCurrentMonth(0);
-      setCurrentYear(currentYear + 1);
-    } else {
-      setCurrentMonth(currentMonth + 1);
-    }
+    setCurrentMonth((prev) => (prev === 11 ? 0 : prev + 1));
+    setCurrentYear((prev) => (currentMonth === 11 ? prev + 1 : prev));
   };
 
   const handleDayClick = (day) => {
@@ -71,26 +64,6 @@ const CalenderWeb = () => {
     }
 
     setShowEventPopup(false);
-    setEventText('');
-    setHours('');
-    setMinutes('');
-  };
-
-  const handleEdit = (index) => {
-    const event = events[index];
-    const [h, m] = event.time.split(':');
-    setSelectedDate(new Date(event.date));
-    setEventText(event.text);
-    setHours(h);
-    setMinutes(m);
-    setEditIndex(index);
-    setShowEventPopup(true);
-  };
-
-  const handleDelete = (index) => {
-    const updated = [...events];
-    updated.splice(index, 1);
-    setEvents(updated);
   };
 
   const getRandomColor = () => {
@@ -106,46 +79,55 @@ const CalenderWeb = () => {
         currentMonth === today.getMonth() &&
         currentYear === today.getFullYear();
 
+      const dateObj = new Date(currentYear, currentMonth, i);
+      const dateString = dateObj.toDateString();
+      const dayEvents = events.filter((event) => event.date === dateString);
+
       const style = i === 1 ? { gridColumnStart: firstDayOfMonth + 1 } : {};
 
       daysArray.push(
-        <span
+        <div
           key={i}
-          className={isToday ? 'current-day' : ''}
+          className={`calendar-day ${isToday ? 'current-day' : ''}`}
           onClick={() => handleDayClick(i)}
           style={style}
         >
-          {i}
-        </span>
+          <div className="date-number">{i}</div>
+          <div className="cell-events">
+            {dayEvents.map((event, index) => (
+              <div className="cell-event" key={index} style={{ backgroundColor: event.color }}>
+                <span className="event-time">{event.time}</span>
+                <span className="event-text">{event.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       );
     }
     return daysArray;
   };
 
   return (
-    <div className={`calendar-web ${showEventPopup ? 'popup-open' : ''}`}>
-      <div className="calendar">
-        <h1 className="heading">Calendar</h1>
-        <div className="navigate-date">
-          <h2 className="month">{monthOfYear[currentMonth]},</h2>
-          <h2 className="year">{currentYear}</h2>
-          <div className="buttons">
-            <i className="bx bx-chevron-left" onClick={handlePrev}></i>
-            <i className="bx bx-chevron-right" onClick={handleNext}></i>
-          </div>
+    <div className="calendar-web">
+      <div className="calendar-header">
+        <h1>Calendar</h1>
+        <div className="navigation">
+          <button onClick={handlePrev}>❮</button>
+          <span>{monthOfYear[currentMonth]} {currentYear}</span>
+          <button onClick={handleNext}>❯</button>
         </div>
-        <div className="weekdays">
-          {daysOfWeek.map((day) => (
-            <span key={day}>{day}</span>
-          ))}
-        </div>
-        <div className="days">{renderDays()}</div>
+      </div>
+
+      <div className="calendar-grid">
+        {daysOfWeek.map((day) => (
+          <div className="weekday" key={day}>{day}</div>
+        ))}
+        {renderDays()}
       </div>
 
       {showEventPopup && (
         <div className="event-popup">
           <div className="time-input">
-            <div className="event-popup-time">Time</div>
             <input
               type="number"
               name="hours"
@@ -153,7 +135,6 @@ const CalenderWeb = () => {
               max={23}
               value={hours}
               onChange={(e) => setHours(e.target.value)}
-              className="hours"
               placeholder="HH"
             />
             <input
@@ -163,52 +144,21 @@ const CalenderWeb = () => {
               max={59}
               value={minutes}
               onChange={(e) => setMinutes(e.target.value)}
-              className="minutes"
               placeholder="MM"
             />
           </div>
           <textarea
-            placeholder="Enter Event Text (Max 60 char)"
+            placeholder="Enter Event Text"
             value={eventText}
             onChange={(e) => setEventText(e.target.value)}
             maxLength={60}
           />
-          <button className="event-popup-btn" onClick={handleSubmitEvent}>
-            {editIndex !== null ? 'Update Event' : 'Add Event'}
+          <button onClick={handleSubmitEvent}>
+            {editIndex !== null ? 'Update' : 'Add'} Event
           </button>
-          <button className="close-event-popup" onClick={() => setShowEventPopup(false)}>
-            <i className="bx bx-x"></i>
-          </button>
+          <button onClick={() => setShowEventPopup(false)}>Close</button>
         </div>
       )}
-
-      <div className="events">
-        {events.map((event, index) => (
-          <div className="event" key={index} style={{ backgroundColor: event.color }}>
-            <div className="event-date-wrapper">
-              <div className="event-date">{event.date}</div>
-              <div className="event-time">{event.time}</div>
-            </div>
-            <div className="event-text">
-              <div
-                className="event-line"
-                style={{
-                  width: '5px',
-                  height: '100%',
-                  backgroundColor: 'white',
-                  marginRight: '1rem',
-                  display: 'inline-block',
-                }}
-              />
-              {event.text}
-            </div>
-            <div className="event-buttons">
-              <i className="bx bxs-edit-alt" onClick={() => handleEdit(index)}></i>
-              <i className="bx bxs-message-alt-x" onClick={() => handleDelete(index)}></i>
-            </div>
-          </div>
-        ))}
-      </div>
     </div>
   );
 };
